@@ -13,13 +13,12 @@ def draw():
     screen.clear()
     start.draw()
     screen.draw.rect(Rect((10,10),(609,609)),(200,200,200))
+    screen.draw.text("Start", (660,18))
+    screen.draw.rect(Rect((630,10),(100,30)),(200,200,200))
     for i in range(0,61):
         for j in range(0,61):
             if board[i][j].alive:
                 screen.draw.filled_rect(Rect(board[i][j].x,board[i][j].y,board[i][j].xWidth,board[i][j].yWidth),(255,255,255))
-        
-def update():
-    pass
 
 # Event hooks
 
@@ -27,13 +26,16 @@ def on_mouse_down(pos):
     global state
     global dragging
     global gameMode
-    if start.collidepoint(pos):
+    if 625 <= pos[0] <= 725 and 10 <= pos[1] <= 40:
         gameMode = 1
-    else:
+    elif gameMode != 1: # Block making further changes one the game has started
         row,col = returnRowCol(pos)
         if posInBoard(pos):
             dragging = True
-            board[row][col].setAlive()
+            if (board[row][col]).isAlive(): #Activate or deactivate on click depending on previous state
+                board[row][col].setDead()
+            else:
+                board[row][col].setAlive()
 
 def on_mouse_up():
     global dragging
@@ -41,9 +43,10 @@ def on_mouse_up():
 
 def on_mouse_move(pos):
     global state
-    row,col = returnRowCol(pos)
-    if posInBoard(pos) and dragging == True:
-        board[row][col].setAlive()
+    if gameMode != 1: # Block making further changes one the game has started
+        row,col = returnRowCol(pos)
+        if posInBoard(pos) and dragging == True:
+            board[row][col].setAlive()
 
 # Helper functions
 
@@ -62,11 +65,7 @@ def returnRowCol(pos):
     col = int(x/chunkSize) - 1
     return row,col
 
-# Place the start button
-def placeStartButton():
-    start.x = 710
-    start.y = 50
-
+# Sets board to next generation based on the previous one
 def nextGen():
     global board
     if gameMode == 1:
@@ -102,6 +101,9 @@ class Cell():
     def setDead(self):
         self.alive = False
 
+    def isAlive(self):
+        return self.alive
+
     def boardNeightbours(self):
         neighbors = []
         for i in range(self.row - 1, self.row + 2):
@@ -120,12 +122,13 @@ class Cell():
 
 # Main
 def main():
-    placeStartButton()
+    #placeStartButton()
     pgzrun.go()
 
+# Global Variables
 gameMode = 0
 dragging = False
-start = Actor("start")
-clock.schedule_interval(nextGen, 1.0)
+
+clock.schedule_interval(nextGen, 1.0) # Schedule board updates
 board = [[Cell(x=i*10+10,y=j*10+10,row=i,col=j) for i in range(0,61)] for j in range(0,61)]
 main()
