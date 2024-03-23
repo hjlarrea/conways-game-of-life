@@ -11,10 +11,15 @@ chunkSize = 10
 
 def draw():
     screen.clear()
-    start.draw()
     screen.draw.rect(Rect((10,10),(609,609)),(200,200,200))
+    
+    # Start button
     screen.draw.text("Start", (660,18))
     screen.draw.rect(Rect((630,10),(100,30)),(200,200,200))
+    # Reset button
+    screen.draw.text("Reset", (658,58))
+    screen.draw.rect(Rect((630,50),(100,30)),(200,200,200))
+
     for i in range(0,61):
         for j in range(0,61):
             if board[i][j].alive:
@@ -26,8 +31,11 @@ def on_mouse_down(pos):
     global state
     global dragging
     global gameMode
-    if 625 <= pos[0] <= 725 and 10 <= pos[1] <= 40:
+    if 625 <= pos[0] <= 725 and 10 <= pos[1] <= 40: # Start button coordinates
         gameMode = 1
+    elif 630 <= pos[0] <= 730 and 50 <= pos[1] <= 80: # Reset button coordinates
+        gameMode = 0
+        resetBoard()
     elif gameMode != 1: # Block making further changes one the game has started
         row,col = returnRowCol(pos)
         if posInBoard(pos):
@@ -82,6 +90,10 @@ def nextGen():
                     board2[j][i] = board[j][i]
         board = board2
 
+def resetBoard():
+    global board
+    board = [[Cell(x=i*10+10,y=j*10+10,row=i,col=j) for i in range(0,61)] for j in range(0,61)]
+
 # Cell class
 
 class Cell():
@@ -122,13 +134,15 @@ class Cell():
 
 # Main
 def main():
-    #placeStartButton()
+    resetBoard()
     pgzrun.go()
 
 # Global Variables
 gameMode = 0
 dragging = False
+board = ""
 
+# Schedule 1 generation per sectond
 clock.schedule_interval(nextGen, 1.0) # Schedule board updates
-board = [[Cell(x=i*10+10,y=j*10+10,row=i,col=j) for i in range(0,61)] for j in range(0,61)]
+
 main()

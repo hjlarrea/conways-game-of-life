@@ -23,5 +23,5 @@ pgzrun main.py
 - [ ] Add a button to advance one step only
 - [ ] Add a pause button
 - [ ] Add a feature to save the initial state
-- [ ] Add a reset button
+- [x] Add a reset button
 - [ ] Add templates
