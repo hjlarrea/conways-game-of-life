@@ -19,6 +19,9 @@ def draw():
     # Reset button
     screen.draw.text("Reset", (658,58))
     screen.draw.rect(Rect((630,50),(100,30)),(200,200,200))
+    # Pause button
+    screen.draw.text("Pause", (658,98))
+    screen.draw.rect(Rect((630,90),(100,30)),(200,200,200))
 
     for i in range(0,61):
         for j in range(0,61):
@@ -31,11 +34,13 @@ def on_mouse_down(pos):
     global state
     global dragging
     global gameMode
-    if 625 <= pos[0] <= 725 and 10 <= pos[1] <= 40: # Start button coordinates
+    if 630 <= pos[0] <= 730 and 10 <= pos[1] <= 40: # Start button coordinates
         gameMode = 1
     elif 630 <= pos[0] <= 730 and 50 <= pos[1] <= 80: # Reset button coordinates
         gameMode = 0
         resetBoard()
+    elif 630 <= pos[0] <= 730 and 90 <= pos[1] <= 120: # Pause button coordinates
+        gameMode = 0
     elif gameMode != 1: # Block making further changes one the game has started
         row,col = returnRowCol(pos)
         if posInBoard(pos):

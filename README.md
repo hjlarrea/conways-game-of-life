@@ -21,7 +21,7 @@ pgzrun main.py
 - [x] Deactivate activated cells during initial set up
 - [x] Block making further changes when the game is running
 - [ ] Add a button to advance one step only
-- [ ] Add a pause button
+- [x] Add a pause button
 - [ ] Add a feature to save the initial state
 - [x] Add a reset button
 - [ ] Add templates
