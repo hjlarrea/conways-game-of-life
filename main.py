@@ -30,6 +30,13 @@ def draw():
         for j in range(0,61):
             if board[i][j].alive:
                 screen.draw.filled_rect(Rect(board[i][j].x,board[i][j].y,board[i][j].xWidth,board[i][j].yWidth),(255,255,255))
+    
+    if gameMode == 0:
+        screen.draw.text("Status: Paused", midleft=(640,600))
+    elif gameMode == 1:
+        screen.draw.text("Status: In Progress", midleft=(640,600))
+    elif gameMode == 3:
+        screen.draw.text("Status: Step", midleft=(640,600))
 
 # Event hooks
 
