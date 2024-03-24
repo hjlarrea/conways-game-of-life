@@ -114,6 +114,10 @@ def resetBoard():
     global board
     board = [[Cell(x=i*10+10,y=j*10+10,row=i,col=j) for i in range(0,61)] for j in range(0,61)]
 
+def main():
+    resetBoard()
+    pgzrun.go()
+
 # Cell class
 
 class Cell():
@@ -152,11 +156,6 @@ class Cell():
                 aliveNeightbours+=1
         return aliveNeightbours
 
-# Main
-def main():
-    resetBoard()
-    pgzrun.go()
-
 # Global Variables
 gameMode = 0
 dragging = False
@@ -165,4 +164,5 @@ board = ""
 # Schedule 1 generation per sectond
 clock.schedule_interval(nextGen, 1.0) # Schedule board updates
 
+# Start
 main()
