@@ -22,6 +22,9 @@ def draw():
     # Pause button
     screen.draw.text("Pause", (658,98))
     screen.draw.rect(Rect((630,90),(100,30)),(200,200,200))
+    # Pause button
+    screen.draw.text("Step", (660,138))
+    screen.draw.rect(Rect((630,130),(100,30)),(200,200,200))
 
     for i in range(0,61):
         for j in range(0,61):
@@ -41,6 +44,8 @@ def on_mouse_down(pos):
         resetBoard()
     elif 630 <= pos[0] <= 730 and 90 <= pos[1] <= 120: # Pause button coordinates
         gameMode = 0
+    elif 630 <= pos[0] <= 730 and 130 <= pos[1] <= 160: # Step button coordinates
+        gameMode = 3
     elif gameMode != 1: # Block making further changes one the game has started
         row,col = returnRowCol(pos)
         if posInBoard(pos):
@@ -81,7 +86,8 @@ def returnRowCol(pos):
 # Sets board to next generation based on the previous one
 def nextGen():
     global board
-    if gameMode == 1:
+    global gameMode
+    if gameMode == 1 or gameMode == 3:
         board2 = [[Cell(x=i*10+10,y=j*10+10,row=i,col=j) for i in range(0,61)] for j in range(0,61)]
         for i in range(0,61):
             for j in range(0,61):
@@ -93,6 +99,8 @@ def nextGen():
                     board2[j][i].setAlive()
                 else:
                     board2[j][i] = board[j][i]
+        if gameMode == 3:
+            gameMode = 0
         board = board2
 
 def resetBoard():
