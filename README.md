@@ -25,3 +25,4 @@ pgzrun main.py
 - [ ] Add a feature to save the initial state
 - [x] Add a reset button
 - [ ] Add templates
+- [ ] Save each generation and allow to move back and forth

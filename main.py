@@ -1,42 +1,68 @@
 from random import randint
 import pygame,pgzero,pgzrun
+import matplotlib.pyplot as plt
 
 # Constants
 
 WIDTH = 800
 HEIGHT = 630
 chunkSize = 10
+boardSize = 61
+boardSizePx = boardSize * 10
 
 # Game loops
 
 def draw():
     screen.clear()
-    screen.draw.rect(Rect((10,10),(609,609)),(200,200,200))
     
-    # Start button
-    screen.draw.text("Start", (660,18))
-    screen.draw.rect(Rect((630,10),(100,30)),(200,200,200))
-    # Reset button
-    screen.draw.text("Reset", (658,58))
-    screen.draw.rect(Rect((630,50),(100,30)),(200,200,200))
-    # Pause button
-    screen.draw.text("Pause", (658,98))
-    screen.draw.rect(Rect((630,90),(100,30)),(200,200,200))
-    # Pause button
-    screen.draw.text("Step", (660,138))
-    screen.draw.rect(Rect((630,130),(100,30)),(200,200,200))
+    buttons = [
+        { 
+            # Start Button
+            "text": {"label": "Start", "x": 660, "y": 18},
+            "button" : {"x": 630, "y": 10, "width": 100, "height": 30}
+        },
+        {
+            # Reset button
+            "text": {"label": "Reset", "x": 658, "y": 58},
+            "button" : {"x": 630, "y": 50, "width": 100, "height": 30}
+        },
+        {
+            # Pause button
+            "text": {"label": "Pause", "x": 658, "y": 98},
+            "button" : {"x": 630, "y": 90, "width": 100, "height": 30}
+        },
+        {
+            # Step button
+            "text": {"label": "Step", "x": 660, "y": 138},
+            "button" : {"x": 630, "y": 130, "width": 100, "height": 30}
+        }
+    ]
 
+    # Render Buttons
+    for button in buttons:
+        screen.draw.text(button["text"]["label"],(button["text"]["x"],button["text"]["y"]))
+        screen.draw.rect(Rect((button["button"]["x"],button["button"]["y"]),(button["button"]["width"],button["button"]["height"])),(255,255,255))
+
+    # Render Status Message
+    if gameMode == 0:
+        screen.draw.text("Status: Paused", midleft=(630,550))
+    elif gameMode == 1 or gameMode == 3:
+        screen.draw.text("Status: In Progress", midleft=(630,550))
+    screen.draw.text(f"Generation: {generation}", midleft=(630,580))
+    screen.draw.text(f"Alive Cells: {aliveCells}", midleft=(630,610))
+
+    # Render Main Board Square
+    screen.draw.rect(Rect((10,10),(609,609)),(200,200,200))
+
+    # Draw generation on the screen
     for i in range(0,61):
         for j in range(0,61):
             if board[i][j].alive:
                 screen.draw.filled_rect(Rect(board[i][j].x,board[i][j].y,board[i][j].xWidth,board[i][j].yWidth),(255,255,255))
-    
-    if gameMode == 0:
-        screen.draw.text("Status: Paused", midleft=(640,600))
-    elif gameMode == 1:
-        screen.draw.text("Status: In Progress", midleft=(640,600))
-    elif gameMode == 3:
-        screen.draw.text("Status: Step", midleft=(640,600))
+            else:
+                if gameMode != 1:
+                    screen.draw.line((board[i][j].x,board[i][j].y+9),(board[i][j].x+9,board[i][j].y+9),(255,255,255))
+                    screen.draw.line((board[i][j].x+9,board[i][j].y),(board[i][j].x+9,board[i][j].y+9),(255,255,255))
 
 # Event hooks
 
@@ -94,6 +120,8 @@ def returnRowCol(pos):
 def nextGen():
     global board
     global gameMode
+    global generation
+    global aliveCells
     if gameMode == 1 or gameMode == 3:
         board2 = [[Cell(x=i*10+10,y=j*10+10,row=i,col=j) for i in range(0,61)] for j in range(0,61)]
         for i in range(0,61):
@@ -109,9 +137,15 @@ def nextGen():
         if gameMode == 3:
             gameMode = 0
         board = board2
+        generation += 1
+        aliveCells = len([board[i][j] for i in range(0,61) for j in range(0,61) if board[i][j].isAlive()])
 
 def resetBoard():
     global board
+    global generation
+    global aliveCells
+    generation = 0
+    aliveCells = 0
     board = [[Cell(x=i*10+10,y=j*10+10,row=i,col=j) for i in range(0,61)] for j in range(0,61)]
 
 def main():
@@ -158,6 +192,8 @@ class Cell():
 
 # Global Variables
 gameMode = 0
+generation = 0
+aliveCells = 0
 dragging = False
 board = ""
 
