@@ -2,61 +2,30 @@ from random import randint
 import pygame,pgzero,pgzrun
 import matplotlib.pyplot as plt
 
-# Constants
-
-WIDTH = 800
-HEIGHT = 630
-chunkSize = 10
-boardSize = 61
-boardSizePx = boardSize * 10
-
 # Game loops
 
 def draw():
     screen.clear()
-    
-    buttons = [
-        { 
-            # Start Button
-            "text": {"label": "Start", "x": 660, "y": 18},
-            "button" : {"x": 630, "y": 10, "width": 100, "height": 30}
-        },
-        {
-            # Reset button
-            "text": {"label": "Reset", "x": 658, "y": 58},
-            "button" : {"x": 630, "y": 50, "width": 100, "height": 30}
-        },
-        {
-            # Pause button
-            "text": {"label": "Pause", "x": 658, "y": 98},
-            "button" : {"x": 630, "y": 90, "width": 100, "height": 30}
-        },
-        {
-            # Step button
-            "text": {"label": "Step", "x": 660, "y": 138},
-            "button" : {"x": 630, "y": 130, "width": 100, "height": 30}
-        }
-    ]
 
     # Render Buttons
     for button in buttons:
         screen.draw.text(button["text"]["label"],(button["text"]["x"],button["text"]["y"]))
         screen.draw.rect(Rect((button["button"]["x"],button["button"]["y"]),(button["button"]["width"],button["button"]["height"])),(255,255,255))
 
-    # Render Status Message
+    # Render Status Messages
     if gameMode == 0:
-        screen.draw.text("Status: Paused", midleft=(630,550))
+        screen.draw.text("Status: Paused", midleft=(buttonLeftMargin,HEIGHT - 110))
     elif gameMode == 1 or gameMode == 3:
-        screen.draw.text("Status: In Progress", midleft=(630,550))
-    screen.draw.text(f"Generation: {generation}", midleft=(630,580))
-    screen.draw.text(f"Alive Cells: {aliveCells}", midleft=(630,610))
+        screen.draw.text("Status: In Progress", midleft=(buttonLeftMargin,HEIGHT - 110))
+    screen.draw.text(f"Generation: {generation}", midleft=(buttonLeftMargin,HEIGHT - 70))
+    screen.draw.text(f"Alive Cells: {aliveCells}", midleft=(buttonLeftMargin,HEIGHT - 30))
 
     # Render Main Board Square
-    screen.draw.rect(Rect((10,10),(609,609)),(200,200,200))
+    screen.draw.rect(Rect((margingSpacing,margingSpacing),(boardSizePx,boardSizePx)),(255,255,255))
 
     # Draw generation on the screen
-    for i in range(0,61):
-        for j in range(0,61):
+    for i in range(0,boardSize):
+        for j in range(0,boardSize):
             if board[i][j].alive:
                 screen.draw.filled_rect(Rect(board[i][j].x,board[i][j].y,board[i][j].xWidth,board[i][j].yWidth),(255,255,255))
             else:
@@ -70,14 +39,16 @@ def on_mouse_down(pos):
     global state
     global dragging
     global gameMode
-    if 630 <= pos[0] <= 730 and 10 <= pos[1] <= 40: # Start button coordinates
+
+    clicked = clickedButton(pos)
+    if clicked == 0:
         gameMode = 1
-    elif 630 <= pos[0] <= 730 and 50 <= pos[1] <= 80: # Reset button coordinates
+    elif clicked == 1:
         gameMode = 0
         resetBoard()
-    elif 630 <= pos[0] <= 730 and 90 <= pos[1] <= 120: # Pause button coordinates
+    elif clicked == 2:
         gameMode = 0
-    elif 630 <= pos[0] <= 730 and 130 <= pos[1] <= 160: # Step button coordinates
+    elif clicked == 3:
         gameMode = 3
     elif gameMode != 1: # Block making further changes one the game has started
         row,col = returnRowCol(pos)
@@ -104,10 +75,17 @@ def on_mouse_move(pos):
 # Returns the cell coordinates of the mouse position for drawing the squares
 def posInBoard(pos):
     x,y = pos
-    if x > 9 and x <= 619 and y > 9 and y <= 619:
+    if x > 9 and x <= boardSizePx+9 and y > 9 and y <= boardSizePx+9:
         return True
     else:
         return False
+
+# Determine in which button from the Buttons dictionarity the user clicked
+def clickedButton(pos):
+    for button in buttons:
+        if button["button"]["x"] <= pos[0] <= (button["button"]["x"] + button["button"]["width"]) and button["button"]["y"] <= pos[1] <= (button["button"]["y"] + button["button"]["height"]):
+            return button["id"] 
+    return -1
 
 # Returns the column and row of a given mouse position in the multi demensional array
 def returnRowCol(pos):
@@ -123,9 +101,9 @@ def nextGen():
     global generation
     global aliveCells
     if gameMode == 1 or gameMode == 3:
-        board2 = [[Cell(x=i*10+10,y=j*10+10,row=i,col=j) for i in range(0,61)] for j in range(0,61)]
-        for i in range(0,61):
-            for j in range(0,61):
+        board2 = [[Cell(x=i*10+10,y=j*10+10,row=i,col=j) for i in range(0,boardSize)] for j in range(0,boardSize)]
+        for i in range(0,boardSize):
+            for j in range(0,boardSize):
                 if board[j][i].aliveNeightbours() < 2:
                     board2[j][i].setDead()
                 elif board[j][i].aliveNeightbours() > 3:
@@ -138,7 +116,7 @@ def nextGen():
             gameMode = 0
         board = board2
         generation += 1
-        aliveCells = len([board[i][j] for i in range(0,61) for j in range(0,61) if board[i][j].isAlive()])
+        aliveCells = len([board[i][j] for i in range(0,boardSize) for j in range(0,boardSize) if board[i][j].isAlive()])
 
 def resetBoard():
     global board
@@ -146,10 +124,12 @@ def resetBoard():
     global aliveCells
     generation = 0
     aliveCells = 0
-    board = [[Cell(x=i*10+10,y=j*10+10,row=i,col=j) for i in range(0,61)] for j in range(0,61)]
+    board = [[Cell(x=i*10+10,y=j*10+10,row=i,col=j) for i in range(0,boardSize)] for j in range(0,boardSize)]
 
 def main():
     resetBoard()
+    # Schedule 1 generation per sectond
+    clock.schedule_interval(nextGen, 1.0) # Schedule board updates
     pgzrun.go()
 
 # Cell class
@@ -178,7 +158,7 @@ class Cell():
         neighbors = []
         for i in range(self.row - 1, self.row + 2):
             for j in range(self.col - 1, self.col + 2):
-                if (i != self.row or j != self.col) and 0 <= i < 61 and 0 <= j < 61:
+                if (i != self.row or j != self.col) and 0 <= i < boardSize and 0 <= j < boardSize:
                     neighbors.append((j, i))
         return neighbors
     
@@ -191,14 +171,47 @@ class Cell():
         return aliveNeightbours
 
 # Global Variables
+boardSize = 80 # Number of cells (e.g. 80 = 80*80)
+chunkSize = 10 # Size of each cell for rendering
+margingSpacing = 10
+boardSizePx = boardSize * chunkSize
+buttonLeftMargin = boardSizePx + 2 * margingSpacing
+buttonWidth = 100
+buttonHeight = 30
+textWidth = 200
+WIDTH = boardSizePx + 3 * margingSpacing + textWidth
+HEIGHT = boardSizePx + 2 * margingSpacing
 gameMode = 0
 generation = 0
 aliveCells = 0
 dragging = False
 board = ""
-
-# Schedule 1 generation per sectond
-clock.schedule_interval(nextGen, 1.0) # Schedule board updates
+buttons = [ # Screen elements to be rendered
+    { 
+        # Start Button
+        "id": 0,
+        "text": {"label": "Start", "x": buttonLeftMargin + 30, "y": 18},
+        "button" : {"x": buttonLeftMargin, "y": 10, "width": buttonWidth, "height": buttonHeight}
+    },
+    {
+        # Reset button
+        "id": 1,
+        "text": {"label": "Reset", "x": buttonLeftMargin + 28, "y": 58},
+        "button" : {"x": buttonLeftMargin, "y": 50, "width": buttonWidth, "height": buttonHeight}
+    },
+    {
+        # Pause button
+        "id": 2,
+        "text": {"label": "Pause", "x": buttonLeftMargin + 28, "y": 98},
+        "button" : {"x": buttonLeftMargin, "y": 90, "width": buttonWidth, "height": buttonHeight}
+    },
+    {
+        # Step button
+        "id": 3,
+        "text": {"label": "Step", "x": buttonLeftMargin + 30, "y": 138},
+        "button" : {"x": buttonLeftMargin, "y": 130, "width": buttonWidth, "height": buttonHeight}
+    }
+]
 
 # Start
 main()
