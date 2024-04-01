@@ -128,9 +128,46 @@ def resetBoard():
 
 def main():
     resetBoard()
-    # Schedule 1 generation per sectond
     clock.schedule_interval(nextGen, 1.0) # Schedule board updates
     pgzrun.go()
+
+# Board class
+    
+class Board():
+
+    def __init__(self):
+        pass
+
+    def resetBoard():
+        global board
+        global generation
+        global aliveCells
+        generation = 0
+        aliveCells = 0
+        board = [[Cell(x=i*10+10,y=j*10+10,row=i,col=j) for i in range(0,boardSize)] for j in range(0,boardSize)]
+
+    def nextGen():
+        global board
+        global gameMode
+        global generation
+        global aliveCells
+        if gameMode == 1 or gameMode == 3:
+            board2 = [[Cell(x=i*10+10,y=j*10+10,row=i,col=j) for i in range(0,boardSize)] for j in range(0,boardSize)]
+            for i in range(0,boardSize):
+                for j in range(0,boardSize):
+                    if board[j][i].aliveNeightbours() < 2:
+                        board2[j][i].setDead()
+                    elif board[j][i].aliveNeightbours() > 3:
+                        board2[j][i].setDead()
+                    elif board[j][i].aliveNeightbours() == 3:
+                        board2[j][i].setAlive()
+                    else:
+                        board2[j][i] = board[j][i]
+            if gameMode == 3:
+                gameMode = 0
+            board = board2
+            generation += 1
+            aliveCells = len([board[i][j] for i in range(0,boardSize) for j in range(0,boardSize) if board[i][j].isAlive()])
 
 # Cell class
 
@@ -170,22 +207,17 @@ class Cell():
                 aliveNeightbours+=1
         return aliveNeightbours
 
-# Global Variables
+# Variables: Configuration
 boardSize = 80 # Number of cells (e.g. 80 = 80*80)
 chunkSize = 10 # Size of each cell for rendering
-margingSpacing = 10
-boardSizePx = boardSize * chunkSize
-buttonLeftMargin = boardSizePx + 2 * margingSpacing
-buttonWidth = 100
-buttonHeight = 30
-textWidth = 200
-WIDTH = boardSizePx + 3 * margingSpacing + textWidth
-HEIGHT = boardSizePx + 2 * margingSpacing
-gameMode = 0
-generation = 0
-aliveCells = 0
-dragging = False
-board = ""
+margingSpacing = 10 # Marging space between board and other elements
+boardSizePx = boardSize * chunkSize # Board size in pixels
+buttonLeftMargin = boardSizePx + 2 * margingSpacing # Where buttons shoudl be placed in the x axis in relation to the board
+buttonWidth = 100 # Button size
+buttonHeight = 30 # Button sie
+textWidth = 200 # Labels width (e.g. Number of alive cells or status)
+WIDTH = boardSizePx + 3 * margingSpacing + textWidth # Window width
+HEIGHT = boardSizePx + 2 * margingSpacing # Windows height
 buttons = [ # Screen elements to be rendered
     { 
         # Start Button
@@ -212,6 +244,13 @@ buttons = [ # Screen elements to be rendered
         "button" : {"x": buttonLeftMargin, "y": 130, "width": buttonWidth, "height": buttonHeight}
     }
 ]
+
+# Variables: Flow Control
+gameMode = 0
+generation = 0
+aliveCells = 0
+dragging = False
+board = ""
 
 # Start
 main()
