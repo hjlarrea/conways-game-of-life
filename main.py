@@ -13,12 +13,12 @@ def draw():
         screen.draw.rect(Rect((button["button"]["x"],button["button"]["y"]),(button["button"]["width"],button["button"]["height"])),(255,255,255))
 
     # Render Status Messages
-    if board.gameMode == 0:
+    if board.getGameMode() == 0:
         screen.draw.text("Status: Paused", midleft=(buttonLeftMargin,HEIGHT - 110))
-    elif board.gameMode == 1 or board.gameMode == 3:
+    elif board.getGameMode() == 1 or board.getGameMode() == 3:
         screen.draw.text("Status: In Progress", midleft=(buttonLeftMargin,HEIGHT - 110))
-    screen.draw.text(f"Generation: {board.generation}", midleft=(buttonLeftMargin,HEIGHT - 70))
-    screen.draw.text(f"Alive Cells: {board.aliveCells}", midleft=(buttonLeftMargin,HEIGHT - 30))
+    screen.draw.text(f"Generation: {board.getGeneration()}", midleft=(buttonLeftMargin,HEIGHT - 70))
+    screen.draw.text(f"Alive Cells: {board.getAliveCells()}", midleft=(buttonLeftMargin,HEIGHT - 30))
 
     # Render Main Board Square
     screen.draw.rect(Rect((margingSpacing,margingSpacing),(boardSizePx,boardSizePx)),(255,255,255))
@@ -26,12 +26,12 @@ def draw():
     # Draw generation on the screen
     for i in range(0,boardSize):
         for j in range(0,boardSize):
-            if board.state[i][j].alive:
-                screen.draw.filled_rect(Rect(board.state[i][j].x,board.state[i][j].y,board.state[i][j].xWidth,board.state[i][j].yWidth),(255,255,255))
+            if board.getCell(row=i,col=j).isAlive():
+                screen.draw.filled_rect(Rect(board.getCell(row=i,col=j).getX(),board.getCell(row=i,col=j).getY(),board.getCell(row=i,col=j).getXWidth(),board.getCell(row=i,col=j).getYWidth()),(255,255,255))
             else:
-                if board.gameMode != 1:
-                    screen.draw.line((board.state[i][j].x,board.state[i][j].y+9),(board.state[i][j].x+9,board.state[i][j].y+9),(255,255,255))
-                    screen.draw.line((board.state[i][j].x+9,board.state[i][j].y),(board.state[i][j].x+9,board.state[i][j].y+9),(255,255,255))
+                if board.gameMode != 1: # If game is not in progress (e.g. paused) draw a grid on the screen
+                    screen.draw.line((board.getCell(row=i,col=j).getX(),board.getCell(row=i,col=j).getY()+9),(board.getCell(row=i,col=j).getX()+9,board.getCell(row=i,col=j).getY()+9),(255,255,255))
+                    screen.draw.line((board.getCell(row=i,col=j).getX()+9,board.getCell(row=i,col=j).getY()),(board.getCell(row=i,col=j).getX()+9,board.getCell(row=i,col=j).getY()+9),(255,255,255))
 
 # Event hooks
 
@@ -40,23 +40,32 @@ def on_mouse_down(pos):
     global dragging
 
     clicked = clickedButton(pos)
-    if clicked == 0:
+    if clicked == 0: # Start button
         board.gameMode = 1
-    elif clicked == 1:
+    elif clicked == 1: # Reset button
         board.gameMode = 0
         board.resetBoard()
-    elif clicked == 2:
-        gameMode = 0
-    elif clicked == 3:
+    elif clicked == 2: # Pause button
+        board.gameMode = 0
+    elif clicked == 3: # Step button
         board.gameMode = 3
+    elif clicked == 4: # X1 speed button
+        clock.unschedule(board.nextGen)
+        clock.schedule_interval(board.nextGen, 1.0) # Schedule board updates
+    elif clicked == 5: # X2 speed button
+        clock.unschedule(board.nextGen)
+        clock.schedule_interval(board.nextGen, 0.5) # Schedule board updates
+    elif clicked == 6: # X4 speed button
+        clock.unschedule(board.nextGen)
+        clock.schedule_interval(board.nextGen, 0.25) # Schedule board updates
     elif board.gameMode != 1: # Block making further changes one the game has started
         row,col = returnRowCol(pos)
         if posInBoard(pos):
             dragging = True
-            if (board.state[row][col]).isAlive(): #Activate or deactivate on click depending on previous state
-                board.state[row][col].setDead()
+            if board.getCell(row=row,col=col).isAlive(): #Activate or deactivate on click depending on previous state
+                board.getCell(row=row,col=col).setDead()
             else:
-                board.state[row][col].setAlive()
+                board.getCell(row=row,col=col).setAlive()
 
 def on_mouse_up():
     global dragging
@@ -67,7 +76,7 @@ def on_mouse_move(pos):
     if board.gameMode != 1: # Block making further changes one the game has started
         row,col = returnRowCol(pos)
         if posInBoard(pos) and dragging == True:
-            board.state[row][col].setAlive()
+            board.getCell(row=row,col=col).setAlive()
 
 # Helper functions
 
@@ -99,70 +108,94 @@ def main():
     clock.schedule_interval(board.nextGen, 1.0) # Schedule board updates
     pgzrun.go()
 
-# Board class
-    
-class Board():
+# Classes
 
+# Board class  
+class Board():
     generation = 0
     aliveCells = 0
     gameMode = 0
 
     def __init__(self):
-        self.state =  [[Cell(x=i*10+10,y=j*10+10,row=i,col=j) for i in range(0,boardSize)] for j in range(0,boardSize)]
+        self.state =  [[Cell(x=j*10+10,y=i*10+10) for j in range(0,boardSize)] for i in range(0,boardSize)]
 
     def getCell(self,row,col):
-        return self.state[row][col].isAlive
+        return self.state[row][col]
     
-    def setCellDead(self,row,col):
-        self.state[row][col].setDead()
+    def getGeneration(self):
+        return self.generation
     
-    def setCellAlive(self,row,col):
-        self.state[row][col].setAlive()
+    def getAliveCells(self):
+        return self.aliveCells
+    
+    def getGameMode(self):
+        return self.gameMode
+    
+    def setGameMode(self,mode):
+        self.gameMode = mode
 
     def aliveNeightbours(self,row,col):
         aliveNeightbours = 0
-        neightbours = self.state[row][col].boardNeightbours()
+        neightbours = self.boardNeightbours(row=row,col=col)
         for row,col in neightbours:
-            if self.state[row][col].alive:
+            if self.getCell(row=row,col=col).alive:
                 aliveNeightbours+=1
         return aliveNeightbours
 
     def resetBoard(self):
-        self.state = [[Cell(x=i*10+10,y=j*10+10,row=i,col=j) for i in range(0,boardSize)] for j in range(0,boardSize)]
+        self.state = [[Cell(x=j*10+10,y=i*10+10) for j in range(0,boardSize)] for i in range(0,boardSize)]
         self.generation = 0
         self.aliveCells = 0
+        self.gameMode = 0
         
     def nextGen(self):
         if board.gameMode == 1 or board.gameMode == 3:
-            state2 = [[Cell(x=i*10+10,y=j*10+10,row=i,col=j) for i in range(0,boardSize)] for j in range(0,boardSize)]
+            state2 = [[Cell(x=j*10+10,y=i*10+10) for j in range(0,boardSize)] for i in range(0,boardSize)]
             for i in range(0,boardSize):
                 for j in range(0,boardSize):
-                    if self.aliveNeightbours(row=j,col=i) < 2:
-                        state2[j][i].setDead()
-                    elif self.aliveNeightbours(row=j,col=i) > 3:
-                        state2[j][i].setDead()
-                    elif self.aliveNeightbours(row=j,col=i) == 3:
-                        state2[j][i].setAlive()
+                    if self.aliveNeightbours(row=i,col=j) < 2:
+                        state2[i][j].setDead()
+                    elif self.aliveNeightbours(row=i,col=j) > 3:
+                        state2[i][j].setDead()
+                    elif self.aliveNeightbours(row=i,col=j) == 3:
+                        state2[i][j].setAlive()
                     else:
-                        state2[j][i] = self.state[j][i]
-            if self.gameMode == 3:
-                self.gameMode = 0
+                        state2[i][j] = self.getCell(row=i,col=j)
+            if self.getGameMode() == 3: # Step forward and revert back to state 0
+                self.setGameMode(0)
             self.state = state2
             self.generation += 1
-            self.aliveCells = len([self.state[i][j] for i in range(0,boardSize) for j in range(0,boardSize) if self.state[i][j].isAlive()])
+            self.aliveCells = len([self.getCell(row=i,col=j) for i in range(0,boardSize) for j in range(0,boardSize) if self.getCell(row=i,col=j).isAlive()])
+    
+    def boardNeightbours(self,row,col):
+        neighbors = []
+        for i in range(row - 1, row + 2):
+            for j in range(col - 1, col + 2):
+                if (i != row or j != col) and 0 <= i < boardSize and 0 <= j < boardSize:
+                    neighbors.append((i, j))
+        return neighbors
 
 # Cell class
-
 class Cell():
     xWidth = 9
     yWidth = 9
     alive = False
 
-    def __init__(self,x,y, row, col):
+    def __init__(self,x,y):
         self.x = x
         self.y = y
-        self.row = row
-        self.col = col
+
+    def getX(self):
+        return self.x
+    
+    def getY(self):
+        return self.y
+    
+    def getXWidth(self):
+        return self.xWidth
+    
+    def getYWidth(self):
+        return self.yWidth
 
     def setAlive(self):
         self.alive = True
@@ -172,14 +205,6 @@ class Cell():
 
     def isAlive(self):
         return self.alive
-
-    def boardNeightbours(self):
-        neighbors = []
-        for i in range(self.row - 1, self.row + 2):
-            for j in range(self.col - 1, self.col + 2):
-                if (i != self.row or j != self.col) and 0 <= i < boardSize and 0 <= j < boardSize:
-                    neighbors.append((j, i))
-        return neighbors
 
 # Variables: Configuration
 boardSize = 80 # Number of cells (e.g. 80 = 80*80)
@@ -216,6 +241,24 @@ buttons = [ # Screen elements to be rendered
         "id": 3,
         "text": {"label": "Step", "x": buttonLeftMargin + 30, "y": 138},
         "button" : {"x": buttonLeftMargin, "y": 130, "width": buttonWidth, "height": buttonHeight}
+    },
+    {
+        # X1 speed button
+        "id": 4,
+        "text": {"label": "X1", "x": buttonLeftMargin + 40, "y": 178},
+        "button" : {"x": buttonLeftMargin, "y": 170, "width": buttonWidth, "height": buttonHeight}
+    },
+    {
+        # X2 speed button
+        "id": 5,
+        "text": {"label": "X2", "x": buttonLeftMargin + 40, "y": 218},
+        "button" : {"x": buttonLeftMargin, "y": 210, "width": buttonWidth, "height": buttonHeight}
+    },
+    {
+        # X4 speed button
+        "id": 6,
+        "text": {"label": "X4", "x": buttonLeftMargin + 40, "y": 258},
+        "button" : {"x": buttonLeftMargin, "y": 250, "width": buttonWidth, "height": buttonHeight}
     }
 ]
 
