@@ -150,7 +150,7 @@ class Board():
 
     def aliveNeightbours(self,row,col):
         aliveNeightbours = 0
-        neightbours = self.boardNeightbours(row=row,col=col)
+        neightbours = self.cellNeightbours(row=row,col=col)
         for row,col in neightbours:
             if self.getCell(row=row,col=col).alive:
                 aliveNeightbours+=1
@@ -181,17 +181,17 @@ class Board():
             self.generation += 1
             self.aliveCells = len([self.getCell(row=i,col=j) for i in range(0,boardSize) for j in range(0,boardSize) if self.getCell(row=i,col=j).isAlive()])
     
-    def boardNeightbours(self,row,col):
+    def cellNeightbours(self,row,col):
         neighbors = []
-        for i in range(row - 1, row + 2):
-            for j in range(col - 1, col + 2):
-                if (i != row or j != col) and 0 <= i < boardSize and 0 <= j < boardSize:
-                    neighbors.append((i, j))
-                #if i == boardSize-1 or j == boardSize-1:
-                #    neighbors.append((boardSize-i-1,boardSize-j-1))
-                #if i == 0 or j == 0:
-                #    neighbors.append(boardSize+i-1)
+        for i in range(-1, 2):
+            for j in range(-1, 2):
+                if i == 0 and j == 0:
+                    continue
+                neighbor_x = (row + i) % boardSize
+                neighbor_y = (col + j) % boardSize
+                neighbors.append((neighbor_x,neighbor_y))
         return neighbors
+
 
 # Cell class
 class Cell():
