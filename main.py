@@ -8,9 +8,14 @@ def draw():
     screen.clear()
 
     # Render Buttons
-    for button in buttons:
-        screen.draw.text(button["text"]["label"],(button["text"]["x"],button["text"]["y"]))
-        screen.draw.rect(Rect((button["button"]["x"],button["button"]["y"]),(button["button"]["width"],button["button"]["height"])),(255,255,255))
+    for key in buttons.keys():
+        if buttons[key]["active"] == False:
+            screen.draw.text(buttons[key]["text"]["label"],(buttons[key]["text"]["x"],buttons[key]["text"]["y"]))
+            screen.draw.rect(Rect((buttons[key]["button"]["x"],buttons[key]["button"]["y"]),(buttons[key]["button"]["width"],buttons[key]["button"]["height"])),(255,255,255))
+        else:
+            # Paint the active speed button
+            screen.draw.filled_rect(Rect((buttons[key]["button"]["x"],buttons[key]["button"]["y"]),(buttons[key]["button"]["width"],buttons[key]["button"]["height"])),(255,255,255))
+            screen.draw.text(buttons[key]["text"]["label"],(buttons[key]["text"]["x"],buttons[key]["text"]["y"]),color=(0,0,0))
 
     # Render Status Messages
     if board.getGameMode() == 0:
@@ -52,12 +57,21 @@ def on_mouse_down(pos):
     elif clicked == 4: # X1 speed button
         clock.unschedule(board.nextGen)
         clock.schedule_interval(board.nextGen, 1.0) # Schedule board updates
+        buttons["x1"]["active"] = True
+        buttons["x2"]["active"] = False
+        buttons["x4"]["active"] = False
     elif clicked == 5: # X2 speed button
         clock.unschedule(board.nextGen)
         clock.schedule_interval(board.nextGen, 0.5) # Schedule board updates
+        buttons["x1"]["active"] = False
+        buttons["x2"]["active"] = True
+        buttons["x4"]["active"] = False
     elif clicked == 6: # X4 speed button
         clock.unschedule(board.nextGen)
         clock.schedule_interval(board.nextGen, 0.25) # Schedule board updates
+        buttons["x1"]["active"] = False
+        buttons["x2"]["active"] = False
+        buttons["x4"]["active"] = True
     elif board.gameMode != 1: # Block making further changes one the game has started
         row,col = returnRowCol(pos)
         if posInBoard(pos):
@@ -90,9 +104,9 @@ def posInBoard(pos):
 
 # Determine in which button from the Buttons dictionarity the user clicked
 def clickedButton(pos):
-    for button in buttons:
-        if button["button"]["x"] <= pos[0] <= (button["button"]["x"] + button["button"]["width"]) and button["button"]["y"] <= pos[1] <= (button["button"]["y"] + button["button"]["height"]):
-            return button["id"] 
+    for key in buttons.keys():
+        if buttons[key]["button"]["x"] <= pos[0] <= (buttons[key]["button"]["x"] + buttons[key]["button"]["width"]) and buttons[key]["button"]["y"] <= pos[1] <= (buttons[key]["button"]["y"] + buttons[key]["button"]["height"]):
+            return buttons[key]["id"] 
     return -1
 
 # Returns the column and row of a given mouse position in the multi demensional array
@@ -173,6 +187,10 @@ class Board():
             for j in range(col - 1, col + 2):
                 if (i != row or j != col) and 0 <= i < boardSize and 0 <= j < boardSize:
                     neighbors.append((i, j))
+                #if i == boardSize-1 or j == boardSize-1:
+                #    neighbors.append((boardSize-i-1,boardSize-j-1))
+                #if i == 0 or j == 0:
+                #    neighbors.append(boardSize+i-1)
         return neighbors
 
 # Cell class
@@ -217,50 +235,57 @@ buttonHeight = 30 # Button sie
 textWidth = 200 # Labels width (e.g. Number of alive cells or status)
 WIDTH = boardSizePx + 3 * margingSpacing + textWidth # Window width
 HEIGHT = boardSizePx + 2 * margingSpacing # Windows height
-buttons = [ # Screen elements to be rendered
-    { 
+buttons = { # Screen elements to be rendered
+    "start": { 
         # Start Button
         "id": 0,
         "text": {"label": "Start", "x": buttonLeftMargin + 30, "y": 18},
-        "button" : {"x": buttonLeftMargin, "y": 10, "width": buttonWidth, "height": buttonHeight}
+        "button" : {"x": buttonLeftMargin, "y": 10, "width": buttonWidth, "height": buttonHeight},
+        "active": False
     },
-    {
+    "reset": {
         # Reset button
         "id": 1,
         "text": {"label": "Reset", "x": buttonLeftMargin + 28, "y": 58},
-        "button" : {"x": buttonLeftMargin, "y": 50, "width": buttonWidth, "height": buttonHeight}
+        "button" : {"x": buttonLeftMargin, "y": 50, "width": buttonWidth, "height": buttonHeight},
+        "active": False
     },
-    {
+    "pause": {
         # Pause button
         "id": 2,
         "text": {"label": "Pause", "x": buttonLeftMargin + 28, "y": 98},
-        "button" : {"x": buttonLeftMargin, "y": 90, "width": buttonWidth, "height": buttonHeight}
+        "button" : {"x": buttonLeftMargin, "y": 90, "width": buttonWidth, "height": buttonHeight},
+        "active": False
     },
-    {
+    "step":{
         # Step button
         "id": 3,
         "text": {"label": "Step", "x": buttonLeftMargin + 30, "y": 138},
-        "button" : {"x": buttonLeftMargin, "y": 130, "width": buttonWidth, "height": buttonHeight}
+        "button" : {"x": buttonLeftMargin, "y": 130, "width": buttonWidth, "height": buttonHeight},
+        "active": False
     },
-    {
+    "x1":{
         # X1 speed button
         "id": 4,
         "text": {"label": "X1", "x": buttonLeftMargin + 40, "y": 178},
-        "button" : {"x": buttonLeftMargin, "y": 170, "width": buttonWidth, "height": buttonHeight}
+        "button" : {"x": buttonLeftMargin, "y": 170, "width": buttonWidth, "height": buttonHeight},
+        "active": True
     },
-    {
+    "x2": {
         # X2 speed button
         "id": 5,
         "text": {"label": "X2", "x": buttonLeftMargin + 40, "y": 218},
-        "button" : {"x": buttonLeftMargin, "y": 210, "width": buttonWidth, "height": buttonHeight}
+        "button" : {"x": buttonLeftMargin, "y": 210, "width": buttonWidth, "height": buttonHeight},
+        "active": False
     },
-    {
+    "x4": {
         # X4 speed button
         "id": 6,
         "text": {"label": "X4", "x": buttonLeftMargin + 40, "y": 258},
-        "button" : {"x": buttonLeftMargin, "y": 250, "width": buttonWidth, "height": buttonHeight}
+        "button" : {"x": buttonLeftMargin, "y": 250, "width": buttonWidth, "height": buttonHeight},
+        "active": False
     }
-]
+}
 
 # Variables: Flow Control
 dragging = False
