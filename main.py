@@ -1,17 +1,29 @@
+"""
+Conway's Game of Life in Python using PyGame Zero
+
+Coded as a personal proyect to satisfy curiosity and learn about PyGame Zero Capabilities.
+
+Author: Hernan J. Larrea (hjlarrea@hotmail.com)
+Date: March, 2024
+"""
+
 import pgzrun
 from pgzero import clock
 from pygame import Rect
+import pgzero.screen
+screen : pgzero.screen.Screen
 # import matplotlib.pyplot as plt
 
 # Game loops
 
 
 def draw():
+    """PyGame Zero's Game Loop"""
     screen.clear()
 
     # Render Buttons
     for key in buttons.keys():
-        if buttons[key]["active"] == False:
+        if buttons[key]["active"] is False:
             screen.draw.text(
                 buttons[key]["text"]["label"],
                 (buttons[key]["text"]["x"], buttons[key]["text"]["y"])
@@ -71,15 +83,15 @@ def draw():
 
 
 def on_mouse_down(pos):
+    """PyGame Zero Event Handler for mouse down."""
     global DRAGGING
 
-    clicked = clickedButton(pos)
+    clicked = clicked_button(pos)
     if clicked == 0:  # Start button
         board.set_game_mode(1)
     elif clicked == 1:  # Reset button
         board.set_game_mode(0)
         board.reset_board()
-        """Resets the board, same a closing the game and opening it again."""
     elif clicked == 2:  # Pause button
         board.set_game_mode(0)
     elif clicked == 3:  # Step button
@@ -106,8 +118,8 @@ def on_mouse_down(pos):
         buttons["x2"]["active"] = False
         buttons["x4"]["active"] = True
     elif board.get_game_mode() != 1:  # Block making further changes one the game has started
-        row, col = returnRowCol(pos)
-        if posInBoard(pos):
+        row, col = return_row_col(pos)
+        if pos_in_board(pos):
             DRAGGING = True
             # Activate or deactivate on click depending on previous state
             if board.get_cell(row=row, col=col).is_alive():
@@ -117,15 +129,16 @@ def on_mouse_down(pos):
 
 
 def on_mouse_up():
+    """PyGame Zero Event Handler for mouse up."""
     global DRAGGING
     DRAGGING = False
 
 
 def on_mouse_move(pos):
-    global board
+    """PyGame Zero Event Handler for mouse movement."""
     if board.get_game_mode() != 1:  # Block making further changes one the game has started
-        row, col = returnRowCol(pos)
-        if posInBoard(pos) and DRAGGING == True:
+        row, col = return_row_col(pos)
+        if pos_in_board(pos) and DRAGGING:
             board.get_cell(row=row, col=col).set_alive()
 
 # Helper functions
@@ -133,17 +146,20 @@ def on_mouse_move(pos):
 # Returns the cell coordinates of the mouse position for drawing the squares
 
 
-def posInBoard(pos):
+def pos_in_board(pos):
+    """Returns a boolean that is True when the position being clicked is within the borders
+    of the board."""
     x, y = pos
     if x > 9 and x <= BOARDSIZEPX+9 and y > 9 and y <= BOARDSIZEPX+9:
         return True
-    else:
-        return False
+    return False
 
 # Determine in which button from the Buttons dictionarity the user clicked
 
 
-def clickedButton(pos):
+def clicked_button(pos):
+    """Returns the button id based on the positional coordinates of the mouse when 
+    clicked. For references on the buttons check the buttons variable."""
     for key in buttons.keys():
         if buttons[key]["button"]["x"] <= pos[0] <= (buttons[key]["button"]["x"] + buttons[key]["button"]["width"]) and buttons[key]["button"]["y"] <= pos[1] <= (buttons[key]["button"]["y"] + buttons[key]["button"]["height"]):
             return buttons[key]["id"]
@@ -152,7 +168,9 @@ def clickedButton(pos):
 # Returns the column and row of a given mouse position in the multi demensional array
 
 
-def returnRowCol(pos):
+def return_row_col(pos):
+    """Returns a tuple with row,col coordinates based on the positional coordinates 
+    of the mouse when clicked"""
     x, y = pos
     row = int(y/CHUNKSIZE) - 1
     col = int(x/CHUNKSIZE) - 1
@@ -228,7 +246,7 @@ class Board():
 
     def calculate_next_generation(self):
         """Calculates the next generation based on the current one by updating the 'state' 2 dimensional array."""
-        if self._game_mode == 1 or self._game_mode == 3:
+        if self._game_mode in (1,3):
             state2 = [[Cell(x=j*10+10, y=i*10+10) for j in range(0, BOARDSIZE)]
                       for i in range(0, BOARDSIZE)]
             for i in range(0, BOARDSIZE):
