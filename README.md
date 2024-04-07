@@ -22,8 +22,10 @@ pgzrun main.py
 - [x] Block making further changes when the game is running
 - [x] Add a button to advance one step only
 - [x] Add a pause button
-- [ ] Add a feature to save and load the initial state
+- [x] Add Speed buttons
 - [x] Add a reset button
+- [x] Make the board infinite or a continium across borders
+- [ ] Add a feature to save and load the initial state
 - [ ] Add templates
 - [ ] Add a graph to show the evolution of number of alive cells vs generation number
 - [ ] Save each generation and allow to move back and forth
