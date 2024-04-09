@@ -11,7 +11,7 @@ import pgzrun
 from pgzero import clock
 from pygame import Rect
 import pgzero.screen
-screen : pgzero.screen.Screen
+screen: pgzero.screen.Screen
 # import matplotlib.pyplot as plt
 
 # Game loops
@@ -96,21 +96,24 @@ def on_mouse_down(pos):
         board.set_game_mode(0)
     elif clicked == 3:  # Step button
         board.set_game_mode(3)
-    elif clicked == 4:  # X1 speed button
+    elif clicked == 4:  # RW button
+        board.decrease_active_generation()
+        board.set_game_mode(4)
+    elif clicked == 5:  # X1 speed button
         clock.unschedule(board.calculate_next_generation)
         # Schedule board updates
         clock.schedule_interval(board.calculate_next_generation, 1.0)
         buttons["x1"]["active"] = True
         buttons["x2"]["active"] = False
         buttons["x4"]["active"] = False
-    elif clicked == 5:  # X2 speed button
+    elif clicked == 6:  # X2 speed button
         clock.unschedule(board.calculate_next_generation)
         # Schedule board updates
         clock.schedule_interval(board.calculate_next_generation, 0.5)
         buttons["x1"]["active"] = False
         buttons["x2"]["active"] = True
         buttons["x4"]["active"] = False
-    elif clicked == 6:  # X4 speed button
+    elif clicked == 7:  # X4 speed button
         clock.unschedule(board.calculate_next_generation)
         # Schedule board updates
         clock.schedule_interval(board.calculate_next_generation, 0.25)
@@ -195,16 +198,17 @@ class Board():
     """Board class represents the core of the game of life. It implements a two dimensional array to store cells and provides
     a number of methods to manage the game state or return associated data to a given generation."""
     _generation = 0
+    _max_generation = 0
     _alive_cells = 0
     _game_mode = 0
 
     def __init__(self):
-        self.state = [[Cell(x=j*10+10, y=i*10+10)
-                       for j in range(0, BOARDSIZE)] for i in range(0, BOARDSIZE)]
+        self.state = [[[Cell(x=j*10+10, y=i*10+10)
+                       for j in range(0, BOARDSIZE)] for i in range(0, BOARDSIZE)]]
 
     def get_cell(self, row, col):
         """Gets a given cell specified by the coordinates row,col."""
-        return self.state[row][col]
+        return self.state[self._generation][row][col]
 
     def get_generation(self):
         """Returns the generation number."""
@@ -218,12 +222,23 @@ class Board():
         """Returns the game mode (see set_game_mode docstring for reference on game modes)."""
         return self._game_mode
 
+    def get_current_generation(self):
+        """Returns the active generation. Active, meaning the one that will be rendered on the screen."""
+        return self._generation
+
+    def decrease_active_generation(self):
+        """Reduces the active generation by 1 so a previous generation can be rendered on the screen."""
+        if self._generation > 0:
+            self._generation -= 1
+            self._game_mode = 3
+
     def set_game_mode(self, mode):
         """Sets the game mode to one of these:
         0 - Game is not in progress and editing the board is allowed.
         1 - Game is in progress, editing the board is not allowed.
         2 - Not in use
         3 - Game is in step mode, advances one step forward and then reverts to game mode 0.
+        4 - Game is in step mode, moves one step backward and then reverts to game mode 0.
         """
         self._game_mode = mode
 
@@ -238,31 +253,36 @@ class Board():
 
     def reset_board(self):
         """Resets the board, same a closing the game and opening it again."""
-        self.state = [[Cell(x=j*10+10, y=i*10+10)
-                       for j in range(0, BOARDSIZE)] for i in range(0, BOARDSIZE)]
+        self.state = [[[Cell(x=j*10+10, y=i*10+10)
+                       for j in range(0, BOARDSIZE)] for i in range(0, BOARDSIZE)]]
         self._generation = 0
+        self._max_generation = 0
         self._alive_cells = 0
         self._game_mode = 0
 
     def calculate_next_generation(self):
         """Calculates the next generation based on the current one by updating the 'state' 2 dimensional array."""
-        if self._game_mode in (1,3):
-            state2 = [[Cell(x=j*10+10, y=i*10+10) for j in range(0, BOARDSIZE)]
-                      for i in range(0, BOARDSIZE)]
-            for i in range(0, BOARDSIZE):
-                for j in range(0, BOARDSIZE):
-                    if self.alive_neightbours(row=i, col=j) < 2:
-                        state2[i][j].set_dead()
-                    elif self.alive_neightbours(row=i, col=j) > 3:
-                        state2[i][j].set_dead()
-                    elif self.alive_neightbours(row=i, col=j) == 3:
-                        state2[i][j].set_alive()
-                    else:
-                        state2[i][j] = self.get_cell(row=i, col=j)
+        if self._game_mode in (1, 3):
             if self.get_game_mode() == 3:  # Step forward and revert back to state 0
                 self.set_game_mode(0)
-            self.state = state2
-            self._generation += 1
+            if self._generation < self._max_generation:
+                self._generation += 1
+            elif self._generation == self._max_generation:
+                new_state = [[Cell(x=j*10+10, y=i*10+10) for j in range(0, BOARDSIZE)]
+                          for i in range(0, BOARDSIZE)]
+                for i in range(0, BOARDSIZE):
+                    for j in range(0, BOARDSIZE):
+                        if self.alive_neightbours(row=i, col=j) < 2:
+                            new_state[i][j].set_dead()
+                        elif self.alive_neightbours(row=i, col=j) > 3:
+                            new_state[i][j].set_dead()
+                        elif self.alive_neightbours(row=i, col=j) == 3:
+                            new_state[i][j].set_alive()
+                        else:
+                            new_state[i][j] = self.get_cell(row=i, col=j)
+                self.state.append(new_state)
+                self._max_generation += 1
+                self._generation += 1
             self._alive_cells = len([self.get_cell(row=i, col=j) for i in range(
                 0, BOARDSIZE) for j in range(0, BOARDSIZE) if self.get_cell(row=i, col=j).is_alive()])
 
@@ -327,8 +347,7 @@ BOARDSIZE = 80  # Number of cells (e.g. 80 = 80*80)
 CHUNKSIZE = 10  # Size of each cell for rendering
 MARGINGSPACING = 10  # Marging space between board and other elements
 BOARDSIZEPX = BOARDSIZE * CHUNKSIZE  # Board size in pixels
-# Where buttons shoudl be placed in the x axis in relation to the board
-BUTTONLEFTMARGING = BOARDSIZEPX + 2 * MARGINGSPACING
+BUTTONLEFTMARGING = BOARDSIZEPX + 2 * MARGINGSPACING # Where buttons shoudl be placed in the x axis in relation to the board
 BUTTONWIDTH = 100  # Button size
 BUTTONHEIGHT = 30  # Button sie
 TEXTWIDTH = 200  # Labels width (e.g. Number of alive cells or status)
@@ -357,31 +376,38 @@ buttons = {  # Screen elements to be rendered
         "active": False
     },
     "step": {
-        # Step button
+        # Step forward button
         "id": 3,
-        "text": {"label": "Step", "x": BUTTONLEFTMARGING + 30, "y": 138},
+        "text": {"label": "FW", "x": BUTTONLEFTMARGING + 40, "y": 138},
         "button": {"x": BUTTONLEFTMARGING, "y": 130, "width": BUTTONWIDTH, "height": BUTTONHEIGHT},
+        "active": False
+    },
+    "back": {
+        # Step back button
+        "id": 4,
+        "text": {"label": "RW", "x": BUTTONLEFTMARGING + 40, "y": 178},
+        "button": {"x": BUTTONLEFTMARGING, "y": 170, "width": BUTTONWIDTH, "height": BUTTONHEIGHT},
         "active": False
     },
     "x1": {
         # X1 speed button
-        "id": 4,
-        "text": {"label": "X1", "x": BUTTONLEFTMARGING + 40, "y": 178},
-        "button": {"x": BUTTONLEFTMARGING, "y": 170, "width": BUTTONWIDTH, "height": BUTTONHEIGHT},
+        "id": 5,
+        "text": {"label": "X1", "x": BUTTONLEFTMARGING + 40, "y": 218},
+        "button": {"x": BUTTONLEFTMARGING, "y": 210, "width": BUTTONWIDTH, "height": BUTTONHEIGHT},
         "active": True
     },
     "x2": {
         # X2 speed button
-        "id": 5,
-        "text": {"label": "X2", "x": BUTTONLEFTMARGING + 40, "y": 218},
-        "button": {"x": BUTTONLEFTMARGING, "y": 210, "width": BUTTONWIDTH, "height": BUTTONHEIGHT},
+        "id": 6,
+        "text": {"label": "X2", "x": BUTTONLEFTMARGING + 40, "y": 258},
+        "button": {"x": BUTTONLEFTMARGING, "y": 250, "width": BUTTONWIDTH, "height": BUTTONHEIGHT},
         "active": False
     },
     "x4": {
         # X4 speed button
-        "id": 6,
-        "text": {"label": "X4", "x": BUTTONLEFTMARGING + 40, "y": 258},
-        "button": {"x": BUTTONLEFTMARGING, "y": 250, "width": BUTTONWIDTH, "height": BUTTONHEIGHT},
+        "id": 7,
+        "text": {"label": "X4", "x": BUTTONLEFTMARGING + 40, "y": 298},
+        "button": {"x": BUTTONLEFTMARGING, "y": 290, "width": BUTTONWIDTH, "height": BUTTONHEIGHT},
         "active": False
     }
 }
