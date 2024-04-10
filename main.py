@@ -53,7 +53,7 @@ def draw():
     if board.get_game_mode() == 0:
         screen.draw.text("Status: Paused", midleft=(
             BUTTONLEFTMARGING, HEIGHT - 110))
-    elif board.get_game_mode() == 1 or board.get_game_mode() == 3:
+    elif board.get_game_mode() in (1,3,4):
         screen.draw.text("Status: In Progress", midleft=(
             BUTTONLEFTMARGING, HEIGHT - 110))
     screen.draw.text(f"Generation: {board.get_generation()}", midleft=(
@@ -97,8 +97,9 @@ def on_mouse_down(pos):
     elif clicked == 3:  # Step button
         board.set_game_mode(3)
     elif clicked == 4:  # RW button
-        board.decrease_active_generation()
         board.set_game_mode(4)
+        board.decrease_active_generation()
+        board.set_game_mode(0)
     elif clicked == 5:  # X1 speed button
         clock.unschedule(board.calculate_next_generation)
         # Schedule board updates
@@ -230,6 +231,7 @@ class Board():
         """Reduces the active generation by 1 so a previous generation can be rendered on the screen."""
         if self._generation > 0:
             self._generation -= 1
+            print(f"Reverting to generation {self._generation} of {self._max_generation}")
             self._game_mode = 3
 
     def set_game_mode(self, mode):
@@ -267,6 +269,7 @@ class Board():
                 self.set_game_mode(0)
             if self._generation < self._max_generation:
                 self._generation += 1
+                print(f"Advancing to generation {self._generation} of {self._max_generation}")
             elif self._generation == self._max_generation:
                 new_state = [[Cell(x=j*10+10, y=i*10+10) for j in range(0, BOARDSIZE)]
                           for i in range(0, BOARDSIZE)]
@@ -283,6 +286,7 @@ class Board():
                 self.state.append(new_state)
                 self._max_generation += 1
                 self._generation += 1
+                print(f"New generation {self._generation} calculated.")
             self._alive_cells = len([self.get_cell(row=i, col=j) for i in range(
                 0, BOARDSIZE) for j in range(0, BOARDSIZE) if self.get_cell(row=i, col=j).is_alive()])
 
