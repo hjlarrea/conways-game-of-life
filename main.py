@@ -8,11 +8,12 @@ Date: March, 2024
 """
 
 import pgzrun
+import pickle
+import datetime
 from pgzero import clock
 from pygame import Rect
 import pgzero.screen
 screen: pgzero.screen.Screen
-# import matplotlib.pyplot as plt
 
 # Game loops
 
@@ -24,36 +25,42 @@ def draw():
     # Render Buttons
     for key in buttons.keys():
         if buttons[key]["active"] is False:
-            screen.draw.text(
-                buttons[key]["text"]["label"],
-                (buttons[key]["text"]["x"], buttons[key]["text"]["y"])
-            )
-            screen.draw.rect(
-                Rect(
-                    (buttons[key]["button"]["x"], buttons[key]["button"]["y"]),
-                    (buttons[key]["button"]["width"],
-                     buttons[key]["button"]["height"])
-                ),
-                (255, 255, 255)
-            )
+            if buttons[key]["enabled"] is True:
+                rect_color = (255, 255, 255)
+                text_color = (255, 255, 255)
+                method = "rect"
+            else:
+                rect_color = (100, 100, 100)
+                text_color = (100, 100, 100)
+                method = "rect"
         else:
-            # Paint the active speed button
-            screen.draw.filled_rect(
-                Rect(
-                    (buttons[key]["button"]["x"], buttons[key]["button"]["y"]),
-                    (buttons[key]["button"]["width"],
-                     buttons[key]["button"]["height"])
-                ),
-                (255, 255, 255)
-            )
-            screen.draw.text(buttons[key]["text"]["label"], (buttons[key]
-                             ["text"]["x"], buttons[key]["text"]["y"]), color=(0, 0, 0))
+            rect_color = (255, 255, 255)
+            text_color = (0, 0, 0)
+            method = "filled_rect"
+
+        rect_method = getattr(screen.draw, method)
+
+        rect_method(
+            Rect(
+                (buttons[key]["button"]["x"],
+                    buttons[key]["button"]["y"]),
+                (buttons[key]["button"]["width"],
+                    buttons[key]["button"]["height"])
+            ),
+            rect_color
+        )
+
+        screen.draw.text(
+            buttons[key]["text"]["label"],
+            (buttons[key]["text"]["x"], buttons[key]
+                ["text"]["y"]), color=text_color
+        )
 
     # Render Status Messages
     if board.get_game_mode() == 0:
         screen.draw.text("Status: Paused", midleft=(
             BUTTONLEFTMARGING, HEIGHT - 110))
-    elif board.get_game_mode() in (1,3,4):
+    elif board.get_game_mode() in (1, 3, 4):
         screen.draw.text("Status: In Progress", midleft=(
             BUTTONLEFTMARGING, HEIGHT - 110))
     screen.draw.text(f"Generation: {board.get_generation()}", midleft=(
@@ -89,17 +96,27 @@ def on_mouse_down(pos):
     clicked = clicked_button(pos)
     if clicked == 0:  # Start button
         board.set_game_mode(1)
+        buttons["save"]["enabled"] = False
+        buttons["load"]["enabled"] = False
     elif clicked == 1:  # Reset button
         board.set_game_mode(0)
+        buttons["save"]["enabled"] = False
+        buttons["load"]["enabled"] = True
         board.reset_board()
     elif clicked == 2:  # Pause button
         board.set_game_mode(0)
+        buttons["save"]["enabled"] = True
+        buttons["load"]["enabled"] = True
     elif clicked == 3:  # Step button
         board.set_game_mode(3)
+        buttons["save"]["enabled"] = True
+        buttons["load"]["enabled"] = True
     elif clicked == 4:  # RW button
         board.set_game_mode(4)
         board.decrease_active_generation()
         board.set_game_mode(0)
+        buttons["save"]["enabled"] = True
+        buttons["load"]["enabled"] = True
     elif clicked == 5:  # X1 speed button
         clock.unschedule(board.calculate_next_generation)
         # Schedule board updates
@@ -121,6 +138,10 @@ def on_mouse_down(pos):
         buttons["x1"]["active"] = False
         buttons["x2"]["active"] = False
         buttons["x4"]["active"] = True
+    elif clicked == 8 and buttons["save"]["enabled"]:
+        board.save_to_file()
+    elif clicked == 9 and buttons["load"]["enabled"]:
+        print("Clicked on load")
     elif board.get_game_mode() != 1:  # Block making further changes one the game has started
         row, col = return_row_col(pos)
         if pos_in_board(pos):
@@ -231,7 +252,6 @@ class Board():
         """Reduces the active generation by 1 so a previous generation can be rendered on the screen."""
         if self._generation > 0:
             self._generation -= 1
-            print(f"Reverting to generation {self._generation} of {self._max_generation}")
             self._game_mode = 3
 
     def set_game_mode(self, mode):
@@ -269,10 +289,9 @@ class Board():
                 self.set_game_mode(0)
             if self._generation < self._max_generation:
                 self._generation += 1
-                print(f"Advancing to generation {self._generation} of {self._max_generation}")
             elif self._generation == self._max_generation:
                 new_state = [[Cell(x=j*10+10, y=i*10+10) for j in range(0, BOARDSIZE)]
-                          for i in range(0, BOARDSIZE)]
+                             for i in range(0, BOARDSIZE)]
                 for i in range(0, BOARDSIZE):
                     for j in range(0, BOARDSIZE):
                         if self.alive_neightbours(row=i, col=j) < 2:
@@ -286,7 +305,6 @@ class Board():
                 self.state.append(new_state)
                 self._max_generation += 1
                 self._generation += 1
-                print(f"New generation {self._generation} calculated.")
             self._alive_cells = len([self.get_cell(row=i, col=j) for i in range(
                 0, BOARDSIZE) for j in range(0, BOARDSIZE) if self.get_cell(row=i, col=j).is_alive()])
 
@@ -303,8 +321,23 @@ class Board():
                 neighbors.append((neighbor_x, neighbor_y))
         return neighbors
 
+    def save_to_file(self):
+        """Saves the board array into a binary file using pickle."""
+        date = datetime.datetime.now()
+        file_path = f"{
+            date.year}-{date.month}-{date.day}-{date.hour}-{date.minute}.sav"
+        data_to_save = [[[1 if self.state[k][i][j].is_alive() else 0 for j in range(
+            0, BOARDSIZE)] for i in range(0, BOARDSIZE)] for k in range(0, self._max_generation)]
+        with open(file_path, 'wb') as file:
+            pickle.dump(data_to_save, file)
+
+    def load_from_file(self,file):
+        """Load the board array from a binary file using pickle."""
+        pass
 
 # Cell class
+
+
 class Cell():
     """Cell class, used to instantiate every cell in the board. When the board it is initialized a 2 dimensional array is 
     created, each position of the array is populated with a Cell type object."""
@@ -351,7 +384,8 @@ BOARDSIZE = 80  # Number of cells (e.g. 80 = 80*80)
 CHUNKSIZE = 10  # Size of each cell for rendering
 MARGINGSPACING = 10  # Marging space between board and other elements
 BOARDSIZEPX = BOARDSIZE * CHUNKSIZE  # Board size in pixels
-BUTTONLEFTMARGING = BOARDSIZEPX + 2 * MARGINGSPACING # Where buttons shoudl be placed in the x axis in relation to the board
+# Where buttons shoudl be placed in the x axis in relation to the board
+BUTTONLEFTMARGING = BOARDSIZEPX + 2 * MARGINGSPACING
 BUTTONWIDTH = 100  # Button size
 BUTTONHEIGHT = 30  # Button sie
 TEXTWIDTH = 200  # Labels width (e.g. Number of alive cells or status)
@@ -363,56 +397,80 @@ buttons = {  # Screen elements to be rendered
         "id": 0,
         "text": {"label": "Start", "x": BUTTONLEFTMARGING + 30, "y": 18},
         "button": {"x": BUTTONLEFTMARGING, "y": 10, "width": BUTTONWIDTH, "height": BUTTONHEIGHT},
-        "active": False
+        "active": False,
+        "enabled": True
     },
     "reset": {
         # Reset button
         "id": 1,
         "text": {"label": "Reset", "x": BUTTONLEFTMARGING + 28, "y": 58},
         "button": {"x": BUTTONLEFTMARGING, "y": 50, "width": BUTTONWIDTH, "height": BUTTONHEIGHT},
-        "active": False
+        "active": False,
+        "enabled": True
     },
     "pause": {
         # Pause button
         "id": 2,
         "text": {"label": "Pause", "x": BUTTONLEFTMARGING + 28, "y": 98},
         "button": {"x": BUTTONLEFTMARGING, "y": 90, "width": BUTTONWIDTH, "height": BUTTONHEIGHT},
-        "active": False
+        "active": False,
+        "enabled": True
     },
     "step": {
         # Step forward button
         "id": 3,
         "text": {"label": "FW", "x": BUTTONLEFTMARGING + 40, "y": 138},
         "button": {"x": BUTTONLEFTMARGING, "y": 130, "width": BUTTONWIDTH, "height": BUTTONHEIGHT},
-        "active": False
+        "active": False,
+        "enabled": True
     },
     "back": {
         # Step back button
         "id": 4,
         "text": {"label": "RW", "x": BUTTONLEFTMARGING + 40, "y": 178},
         "button": {"x": BUTTONLEFTMARGING, "y": 170, "width": BUTTONWIDTH, "height": BUTTONHEIGHT},
-        "active": False
+        "active": False,
+        "enabled": True
     },
     "x1": {
         # X1 speed button
         "id": 5,
         "text": {"label": "X1", "x": BUTTONLEFTMARGING + 40, "y": 218},
         "button": {"x": BUTTONLEFTMARGING, "y": 210, "width": BUTTONWIDTH, "height": BUTTONHEIGHT},
-        "active": True
+        "active": True,
+        "enabled": True
     },
     "x2": {
         # X2 speed button
         "id": 6,
         "text": {"label": "X2", "x": BUTTONLEFTMARGING + 40, "y": 258},
         "button": {"x": BUTTONLEFTMARGING, "y": 250, "width": BUTTONWIDTH, "height": BUTTONHEIGHT},
-        "active": False
+        "active": False,
+        "enabled": True
     },
     "x4": {
         # X4 speed button
         "id": 7,
         "text": {"label": "X4", "x": BUTTONLEFTMARGING + 40, "y": 298},
         "button": {"x": BUTTONLEFTMARGING, "y": 290, "width": BUTTONWIDTH, "height": BUTTONHEIGHT},
-        "active": False
+        "active": False,
+        "enabled": True
+    },
+    "save": {
+        # Save statebutton
+        "id": 8,
+        "text": {"label": "Save", "x": BUTTONLEFTMARGING + 30, "y": 338},
+        "button": {"x": BUTTONLEFTMARGING, "y": 330, "width": BUTTONWIDTH, "height": BUTTONHEIGHT},
+        "active": False,
+        "enabled": False
+    },
+    "load": {
+        # Load state button
+        "id": 9,
+        "text": {"label": "Load", "x": BUTTONLEFTMARGING + 30, "y": 378},
+        "button": {"x": BUTTONLEFTMARGING, "y": 370, "width": BUTTONWIDTH, "height": BUTTONHEIGHT},
+        "active": False,
+        "enabled": True
     }
 }
 
