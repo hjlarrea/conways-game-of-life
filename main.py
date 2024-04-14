@@ -7,9 +7,9 @@ Author: Hernan J. Larrea (hjlarrea@hotmail.com)
 Date: March, 2024
 """
 
-import pgzrun
 import pickle
 import datetime
+import pgzrun
 from pgzero import clock
 from pygame import Rect
 import pgzero.screen
@@ -63,6 +63,9 @@ def draw():
     elif board.get_game_mode() in (1, 3, 4):
         screen.draw.text("Status: In Progress", midleft=(
             BUTTONLEFTMARGING, HEIGHT - 110))
+    elif board.get_game_mode() == 5:
+        screen.draw.text("Status: Loading...", midleft=(
+            BUTTONLEFTMARGING, HEIGHT - 110))
     screen.draw.text(f"Generation: {board.get_generation()}", midleft=(
         BUTTONLEFTMARGING, HEIGHT - 70))
     screen.draw.text(f"Alive Cells: {board.get_alive_cells()}", midleft=(
@@ -85,6 +88,17 @@ def draw():
                     )+9), (board.get_cell(row=i, col=j).get_x()+9, board.get_cell(row=i, col=j).get_y()+9), (255, 255, 255))
                     screen.draw.line((board.get_cell(row=i, col=j).get_x()+9, board.get_cell(row=i, col=j).get_y(
                     )), (board.get_cell(row=i, col=j).get_x()+9, board.get_cell(row=i, col=j).get_y()+9), (255, 255, 255))
+
+    # Render loading screen
+    if board.get_game_mode() == 5:
+        screen.draw.filled_rect(
+            Rect(WIDTH/2-300, HEIGHT/2-100, 600, 200), (255, 255, 255))
+        screen.draw.filled_rect(
+            Rect(WIDTH/2-290, HEIGHT/2-90, 580, 180), (0, 0, 0))
+        screen.draw.text(f"File name  to load (no .sav extension): {
+                         file_name}", midleft=(WIDTH/2-280, HEIGHT/2-20))
+        screen.draw.text("Hit enter to load",
+                         midleft=(WIDTH/2-280, HEIGHT/2+40))
 
 # Event hooks
 
@@ -141,8 +155,8 @@ def on_mouse_down(pos):
     elif clicked == 8 and buttons["save"]["enabled"]:
         board.save_to_file()
     elif clicked == 9 and buttons["load"]["enabled"]:
-        print("Clicked on load")
-    elif board.get_game_mode() != 1:  # Block making further changes one the game has started
+        board.set_game_mode(5)
+    elif board.get_game_mode() not in (1, 5):  # Block making further changes one the game has started
         row, col = return_row_col(pos)
         if pos_in_board(pos):
             DRAGGING = True
@@ -161,10 +175,24 @@ def on_mouse_up():
 
 def on_mouse_move(pos):
     """PyGame Zero Event Handler for mouse movement."""
-    if board.get_game_mode() != 1:  # Block making further changes one the game has started
+    if board.get_game_mode() not in (1, 5):  # Block making further changes one the game has started
         row, col = return_row_col(pos)
         if pos_in_board(pos) and DRAGGING:
             board.get_cell(row=row, col=col).set_alive()
+
+
+def on_key_down(key):
+    """PyGame Zero Event Handler for Keyboard"""
+    global file_name
+    if board.get_game_mode() == 5:
+        if key == 8:
+            file_name = file_name[0:-1]
+        elif key == 13:
+            board.load_from_file(file_name)
+            board.set_game_mode(0)
+        elif (key >= 48 and key <= 57) or (key >= 97 and key <= 122) or key == 45:
+            pressedKey = chr(key)
+            file_name += pressedKey
 
 # Helper functions
 
@@ -261,6 +289,7 @@ class Board():
         2 - Not in use
         3 - Game is in step mode, advances one step forward and then reverts to game mode 0.
         4 - Game is in step mode, moves one step backward and then reverts to game mode 0.
+        5 - Load Screen
         """
         self._game_mode = mode
 
@@ -331,9 +360,28 @@ class Board():
         with open(file_path, 'wb') as file:
             pickle.dump(data_to_save, file)
 
-    def load_from_file(self,file):
+    def load_from_file(self, file_name):
         """Load the board array from a binary file using pickle."""
-        pass
+        try:
+            with open(file_name+".sav", 'rb') as file:
+                data_to_load = pickle.load(file)
+
+            self._max_generation = len(data_to_load) - 1
+            self._generation = self._max_generation
+
+            self.state = [[[Cell(x=j*10+10, y=i*10+10)
+                            for j in range(len(data_to_load[k][i]))] for i in range(len(data_to_load[k]))] for k in range(len(data_to_load))]
+
+            for k in range(self._max_generation):
+                for i in range(BOARDSIZE):
+                    for j in range(BOARDSIZE):
+                        if data_to_load[k][i][j] == 1:
+                            self.state[k][i][j].set_alive()
+
+            self._alive_cells = len([self.get_cell(row=i, col=j) for i in range(
+                0, BOARDSIZE) for j in range(0, BOARDSIZE) if self.get_cell(row=i, col=j).is_alive()])
+        except (FileNotFoundError):
+            print(f"File {file_name} not found.")
 
 # Cell class
 
@@ -476,6 +524,7 @@ buttons = {  # Screen elements to be rendered
 
 # Variables: Flow Control
 DRAGGING = False
+file_name = ""
 
 # Start
 board = Board()
