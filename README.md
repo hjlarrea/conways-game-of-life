@@ -28,6 +28,4 @@ pgzrun main.py
 - [x] Save each generation and allow to move back and forth
 - [x] Add a feature to save and load the initial state
 - [ ] Add templates
-- [ ] Add a graph to show the evolution of number of alive cells vs generation number
-- [ ] Add the possibility of starting new timelines from a given point
 - [ ] Once the board reaches stability (no changes in two consecutive generations) stop the game
