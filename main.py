@@ -25,14 +25,13 @@ def draw():
     # Render Buttons
     for key in buttons.keys():
         if buttons[key]["active"] is False:
+            method = "rect"
             if buttons[key]["enabled"] is True:
                 rect_color = (255, 255, 255)
                 text_color = (255, 255, 255)
-                method = "rect"
             else:
                 rect_color = (100, 100, 100)
                 text_color = (100, 100, 100)
-                method = "rect"
         else:
             rect_color = (255, 255, 255)
             text_color = (0, 0, 0)
