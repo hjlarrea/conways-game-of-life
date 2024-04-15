@@ -363,21 +363,22 @@ class Board():
     def load_from_file(self, file_name):
         """Load the board array from a binary file using pickle."""
         try:
+            # Load binary save file
             with open(file_name+".sav", 'rb') as file:
                 data_to_load = pickle.load(file)
-
+            # Initialize state variables
             self._max_generation = len(data_to_load) - 1
             self._generation = self._max_generation
-
+            # Initialize the state to match the data to be loaded in size
             self.state = [[[Cell(x=j*10+10, y=i*10+10)
                             for j in range(len(data_to_load[k][i]))] for i in range(len(data_to_load[k]))] for k in range(len(data_to_load))]
-
+            # Match the state to the data loaded
             for k in range(self._max_generation + 1):
                 for i in range(BOARDSIZE):
                     for j in range(BOARDSIZE):
                         if data_to_load[k][i][j] == 1:
                             self.state[k][i][j].set_alive()
-
+            # Initialize state variables
             self._alive_cells = len([self.get_cell(row=i, col=j) for i in range(
                 0, BOARDSIZE) for j in range(0, BOARDSIZE) if self.get_cell(row=i, col=j).is_alive()])
         except (FileNotFoundError):
