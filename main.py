@@ -114,7 +114,7 @@ def on_mouse_down(pos):
         buttons["load"]["enabled"] = False
     elif clicked == 1:  # Reset button
         board.set_game_mode(0)
-        buttons["save"]["enabled"] = False
+        buttons["save"]["enabled"] = True
         buttons["load"]["enabled"] = True
         board.reset_board()
     elif clicked == 2:  # Pause button
@@ -355,8 +355,8 @@ class Board():
         date = datetime.datetime.now()
         file_path = f"{
             date.year}-{date.month}-{date.day}-{date.hour}-{date.minute}.sav"
-        data_to_save = [[[1 if self.state[k][i][j].is_alive() else 0 for j in range(
-            0, BOARDSIZE)] for i in range(0, BOARDSIZE)] for k in range(0, self._max_generation)]
+        data_to_save = [[[1 if (self.state[k][i][j]).is_alive() else 0 for j in range(
+            0, BOARDSIZE)] for i in range(0, BOARDSIZE)] for k in range(0, self._max_generation + 1)]
         with open(file_path, 'wb') as file:
             pickle.dump(data_to_save, file)
 
@@ -372,7 +372,7 @@ class Board():
             self.state = [[[Cell(x=j*10+10, y=i*10+10)
                             for j in range(len(data_to_load[k][i]))] for i in range(len(data_to_load[k]))] for k in range(len(data_to_load))]
 
-            for k in range(self._max_generation):
+            for k in range(self._max_generation + 1):
                 for i in range(BOARDSIZE):
                     for j in range(BOARDSIZE):
                         if data_to_load[k][i][j] == 1:
@@ -510,7 +510,7 @@ buttons = {  # Screen elements to be rendered
         "text": {"label": "Save", "x": BUTTONLEFTMARGING + 30, "y": 338},
         "button": {"x": BUTTONLEFTMARGING, "y": 330, "width": BUTTONWIDTH, "height": BUTTONHEIGHT},
         "active": False,
-        "enabled": False
+        "enabled": True
     },
     "load": {
         # Load state button
