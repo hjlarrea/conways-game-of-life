@@ -9,6 +9,7 @@ Date: March, 2024
 
 import pickle
 import datetime
+from random import randint
 import pgzrun
 from pgzero import clock
 from pygame import Rect
@@ -111,10 +112,12 @@ def on_mouse_down(pos):
         board.set_game_mode(1)
         buttons["save"]["enabled"] = False
         buttons["load"]["enabled"] = False
+        buttons["randomize"]["enabled"] = False
     elif clicked == 1:  # Reset button
         board.set_game_mode(0)
         buttons["save"]["enabled"] = True
         buttons["load"]["enabled"] = True
+        buttons["randomize"]["enabled"] = True
         board.reset_board()
     elif clicked == 2:  # Pause button
         board.set_game_mode(0)
@@ -124,6 +127,7 @@ def on_mouse_down(pos):
         board.set_game_mode(3)
         buttons["save"]["enabled"] = True
         buttons["load"]["enabled"] = True
+        buttons["randomize"]["enabled"] = False
     elif clicked == 4:  # RW button
         board.set_game_mode(4)
         board.decrease_active_generation()
@@ -155,6 +159,8 @@ def on_mouse_down(pos):
         board.save_to_file()
     elif clicked == 9 and buttons["load"]["enabled"]:
         board.set_game_mode(5)
+    elif clicked == 10:
+        board.randomize()
     elif board.get_game_mode() not in (1, 5):  # Block making further changes one the game has started
         row, col = return_row_col(pos)
         if pos_in_board(pos):
@@ -190,8 +196,7 @@ def on_key_down(key):
             board.load_from_file(file_name)
             board.set_game_mode(0)
         elif (key >= 48 and key <= 57) or (key >= 97 and key <= 122) or key == 45:
-            pressedKey = chr(key)
-            file_name += pressedKey
+            file_name += chr(key)
 
 # Helper functions
 
@@ -380,8 +385,17 @@ class Board():
             # Initialize state variables
             self._alive_cells = len([self.get_cell(row=i, col=j) for i in range(
                 0, BOARDSIZE) for j in range(0, BOARDSIZE) if self.get_cell(row=i, col=j).is_alive()])
-        except (FileNotFoundError):
+        except FileNotFoundError:
             print(f"File {file_name} not found.")
+
+    def randomize(self):
+        """Create a random state for the board."""
+        for i in range(BOARDSIZE):
+            for j in range(BOARDSIZE):
+                if randint(0, 10) == 1:
+                    self.get_cell(row=i, col=j).set_alive()
+                else:
+                    self.get_cell(row=i, col=j).set_dead()
 
 # Cell class
 
@@ -443,7 +457,7 @@ buttons = {  # Screen elements to be rendered
     "start": {
         # Start Button
         "id": 0,
-        "text": {"label": "Start", "x": BUTTONLEFTMARGING + 30, "y": 18},
+        "text": {"label": "Play", "x": BUTTONLEFTMARGING + 30, "y": 18},
         "button": {"x": BUTTONLEFTMARGING, "y": 10, "width": BUTTONWIDTH, "height": BUTTONHEIGHT},
         "active": False,
         "enabled": True
@@ -517,6 +531,13 @@ buttons = {  # Screen elements to be rendered
         "id": 9,
         "text": {"label": "Load", "x": BUTTONLEFTMARGING + 30, "y": 378},
         "button": {"x": BUTTONLEFTMARGING, "y": 370, "width": BUTTONWIDTH, "height": BUTTONHEIGHT},
+        "active": False,
+        "enabled": True
+    },
+    "randomize": {
+        "id": 10,
+        "text": {"label": "Randomize", "x": BUTTONLEFTMARGING + 5, "y": 418},
+        "button": {"x": BUTTONLEFTMARGING, "y": 410, "width": BUTTONWIDTH, "height": BUTTONHEIGHT},
         "active": False,
         "enabled": True
     }
