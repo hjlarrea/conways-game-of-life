@@ -65,6 +65,9 @@ def draw():
     elif board.get_game_mode() == 5:
         screen.draw.text("Status: Loading...", midleft=(
             BUTTONLEFTMARGING, HEIGHT - 110))
+    elif board.get_game_mode() == 6:
+        screen.draw.text("Status: Stable", midleft=(
+            BUTTONLEFTMARGING, HEIGHT - 110))
     screen.draw.text(f"Generation: {board.get_generation()}", midleft=(
         BUTTONLEFTMARGING, HEIGHT - 70))
     screen.draw.text(f"Alive Cells: {board.get_alive_cells()}", midleft=(
@@ -82,7 +85,7 @@ def draw():
                 ), board.get_cell(row=i, col=j).get_x_width(), board.get_cell(row=i, col=j).get_y_width()), (255, 255, 255))
             else:
                 # If game is not in progress (e.g. paused) draw a grid on the screen
-                if board.get_game_mode() != 1:
+                if board.get_game_mode() == 0:
                     screen.draw.line((board.get_cell(row=i, col=j).get_x(), board.get_cell(row=i, col=j).get_y(
                     )+9), (board.get_cell(row=i, col=j).get_x()+9, board.get_cell(row=i, col=j).get_y()+9), (255, 255, 255))
                     screen.draw.line((board.get_cell(row=i, col=j).get_x()+9, board.get_cell(row=i, col=j).get_y(
@@ -160,7 +163,7 @@ def on_mouse_down(pos):
         board.set_game_mode(5)
     elif clicked == 10:
         board.randomize()
-    elif board.get_game_mode() not in (1, 5):  # Block making further changes one the game has started
+    elif board.get_game_mode() == 0:  # Only allow making changes when the game is not in progress
         row, col = return_row_col(pos, CHUNKSIZE)
         if pos_in_board(pos, BOARDSIZEPX):
             DRAGGING = True

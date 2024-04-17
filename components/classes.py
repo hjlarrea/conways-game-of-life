@@ -61,6 +61,7 @@ class Board():
         3 - Game is in step mode, advances one step forward and then reverts to game mode 0.
         4 - Game is in step mode, moves one step backward and then reverts to game mode 0.
         5 - Load Screen
+        6 - Stable board
         """
         self._game_mode = mode
 
@@ -69,7 +70,7 @@ class Board():
         alive_neightbours = 0
         neightbours = self.cell_neightbours(row=row, col=col)
         for row, col in neightbours:
-            if self.get_cell(row=row, col=col).alive:
+            if self.get_cell(row=row, col=col).is_alive():
                 alive_neightbours += 1
         return alive_neightbours
 
@@ -84,10 +85,12 @@ class Board():
 
     def calculate_next_generation(self):
         """Calculates the next generation based on the current one by updating the 'state' 2 dimensional array."""
-        if self._game_mode in (1, 3):
+        if self.get_generation() > 1 and (self.state[-1] == self.state[-2]) and self.get_game_mode(): # Check if the board is stable in two generations in a row
+            self.set_game_mode(6)
+        elif self._game_mode in (1, 3):
             if self.get_game_mode() == 3:  # Step forward and revert back to state 0
                 self.set_game_mode(0)
-            if self._generation < self._max_generation:
+            if self._generation < self._max_generation: # If rendering a previous state move forward to the next generation without calculating it
                 self._generation += 1
             elif self._generation == self._max_generation:
                 new_state = [[Cell(x=j*10+10, y=i*10+10) for j in range(0, self.board_size)]
@@ -139,7 +142,7 @@ class Board():
                 data_to_load = pickle.load(file)
             # Initialize state variables
             self._max_generation = len(data_to_load) - 1
-            self._generation = self._max_generation
+            self._generation = 0
             # Initialize the state to match the data to be loaded in size
             self.state = [[[Cell(x=j*10+10, y=i*10+10)
                             for j in range(len(data_to_load[k][i]))] for i in range(len(data_to_load[k]))] for k in range(len(data_to_load))]
@@ -157,12 +160,22 @@ class Board():
 
     def randomize(self):
         """Create a random state for the board."""
+        hit = False
+        top = 20
         for i in range(self.board_size):
             for j in range(self.board_size):
-                if randint(0, 10) == 1:
-                    self.get_cell(row=i, col=j).set_alive()
+                if hit is True:
+                    if randint(0,top) == 1:
+                        self.get_cell(row=i, col=j).set_alive()
                 else:
-                    self.get_cell(row=i, col=j).set_dead()
+                    if randint(0, top) == 1:
+                        self.get_cell(row=i, col=j).set_alive()
+                        hit = True
+                        top = top - 1
+                    else:
+                        self.get_cell(row=i, col=j).set_dead()
+                        hit = False
+                        top = 20
 
 # Cell class
 
@@ -171,38 +184,41 @@ class Cell():
     """Cell class, used to instantiate every cell in the board. When the board it is initialized a 2 dimensional array is 
     created, each position of the array is populated with a Cell type object."""
 
-    xWidth = 9
-    yWidth = 9
-    alive = False
+    _xWidth = 9
+    _yWidth = 9
+    _alive = False
 
     def __init__(self, x, y):
-        self.x = x
-        self.y = y
+        self._x = x
+        self._y = y
 
     def get_x(self):
         """Returns the X coordinate from the board, used for drawing."""
-        return self.x
+        return self._x
 
     def get_y(self):
         """Returns the Y coordinate from the board, used for drawing."""
-        return self.y
+        return self._y
 
     def get_x_width(self):
         """Returns the height of the cell, used for drawing."""
-        return self.xWidth
+        return self._xWidth
 
     def get_y_width(self):
         """Returns the width of the cell, used for drawing."""
-        return self.yWidth
+        return self._yWidth
 
     def set_alive(self):
         """Sets the cell to alive state."""
-        self.alive = True
+        self._alive = True
 
     def set_dead(self):
         """Sets the cell to dead state."""
-        self.alive = False
+        self._alive = False
 
     def is_alive(self):
         """Returns a boolean indicating whether the cell is alive or dead."""
-        return self.alive
+        return self._alive
+    
+    def __eq__(self, other):
+        return isinstance(other, Cell) and self.is_alive() == other.is_alive()

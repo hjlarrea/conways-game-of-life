@@ -33,5 +33,5 @@ pgzrun main.py
 - [x] Make the board infinite or a continium across borders
 - [x] Save each generation and allow to move back and forth
 - [x] Add a feature to save and load the initial state
+- [x] Once the board reaches stability (no changes in two consecutive generations) stop the game
 - [ ] Add templates
-- [ ] Once the board reaches stability (no changes in two consecutive generations) stop the game
