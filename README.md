@@ -18,6 +18,14 @@ Run the following command standing in the project's directory:
 pgzrun main.py
 ```
 
+## Running tests
+
+At the root of the repository run:
+
+```
+pytest -v
+```
+
 # Documentation
 
 - [Instructions](./docs/Instructions.md)

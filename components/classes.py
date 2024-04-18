@@ -8,6 +8,7 @@ Date: March, 2024
 import pickle
 import datetime
 from random import randint
+import numpy as np
 
 # Classes
 
@@ -160,22 +161,15 @@ class Board():
 
     def randomize(self):
         """Create a random state for the board."""
-        hit = False
-        top = 20
-        for i in range(self.board_size):
-            for j in range(self.board_size):
-                if hit is True:
-                    if randint(0,top) == 1:
-                        self.get_cell(row=i, col=j).set_alive()
-                else:
-                    if randint(0, top) == 1:
-                        self.get_cell(row=i, col=j).set_alive()
-                        hit = True
-                        top = top - 1
-                    else:
-                        self.get_cell(row=i, col=j).set_dead()
-                        hit = False
-                        top = 20
+        cluster_size=10
+        cluster_prob=0.5
+        center_x = self.board_size // 2
+        center_y = self.board_size // 2
+
+        for x in range(self.board_size):
+            for y in range(self.board_size):
+                if np.random.rand() < cluster_prob * np.exp(-((x - center_x)**2 + (y - center_y)**2) / (2 * cluster_size**2)):
+                    self.get_cell(row=x,col=y).set_alive()
 
 # Cell class
 

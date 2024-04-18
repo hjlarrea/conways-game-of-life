@@ -251,7 +251,7 @@ buttons = {  # Screen elements to be rendered
     "step": {
         # Step forward button
         "id": 3,
-        "text": {"label": "FW", "x": BUTTONLEFTMARGING + 40, "y": 138},
+        "text": {"label": "FW", "x": BUTTONLEFTMARGING + 35, "y": 138},
         "button": {"x": BUTTONLEFTMARGING, "y": 130, "width": BUTTONWIDTH, "height": BUTTONHEIGHT},
         "active": False,
         "enabled": True
@@ -259,7 +259,7 @@ buttons = {  # Screen elements to be rendered
     "back": {
         # Step back button
         "id": 4,
-        "text": {"label": "RW", "x": BUTTONLEFTMARGING + 40, "y": 178},
+        "text": {"label": "RW", "x": BUTTONLEFTMARGING + 35, "y": 178},
         "button": {"x": BUTTONLEFTMARGING, "y": 170, "width": BUTTONWIDTH, "height": BUTTONHEIGHT},
         "active": False,
         "enabled": True
