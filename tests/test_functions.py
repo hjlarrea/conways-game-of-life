@@ -35,4 +35,7 @@ def test_pos_in_board():
     assert pos_in_board((69,69),60) is True
 
 def test_return_row_col():
-    pass
+    assert return_row_col((10,10),10) == (0,0)
+    assert return_row_col((20,10),10) == (0,1) # x=20 y=10 should be row=0 col=1
+    assert return_row_col((10,20),10) == (1,0)
+    assert return_row_col((50,50),10) == (4,4)
